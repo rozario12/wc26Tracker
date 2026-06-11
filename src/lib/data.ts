@@ -23,20 +23,21 @@ function pairKey(dateParam: string, a: string, b: string): string {
   return `${dateParam}|${[canonicalTeam(a), canonicalTeam(b)].sort().join('|')}`
 }
 
-/** Fetch and normalise the openfootball schedule into canonical Fixtures. */
-export async function fetchSchedule(): Promise<Fixture[]> {
-  const res = await fetch(SCHEDULE_URL)
-  if (!res.ok) throw new Error(`Schedule fetch failed: HTTP ${res.status}`)
-  const data = (await res.json()) as OpenFootballFile
-
+/**
+ * Normalise the openfootball file into canonical Fixtures. Pure (no network) so
+ * it can be unit-tested. The id is derived from the match's position in the file
+ * — openfootball omits the `num` field on most 2026 matches, so relying on it
+ * produced duplicate ids ("mundefined") that collided across every fixture.
+ */
+export function parseSchedule(data: OpenFootballFile): Fixture[] {
   const fixtures: Fixture[] = []
-  for (const m of data.matches) {
+  data.matches.forEach((m, i) => {
     const kickoff = parseKickoff(m.date, m.time)
-    if (!kickoff) continue
+    if (!kickoff) return
     const resolved = !isPlaceholder(m.team1) && !isPlaceholder(m.team2)
     fixtures.push({
-      id: `m${m.num}`,
-      num: m.num,
+      id: `m${m.num ?? i + 1}-${i}`,
+      num: m.num ?? i + 1,
       round: m.round,
       group: m.group ?? null,
       ground: m.ground,
@@ -47,9 +48,17 @@ export async function fetchSchedule(): Promise<Fixture[]> {
       resolved,
       result: null,
     })
-  }
+  })
   fixtures.sort((a, b) => a.kickoff.getTime() - b.kickoff.getTime())
   return fixtures
+}
+
+/** Fetch and normalise the openfootball schedule into canonical Fixtures. */
+export async function fetchSchedule(): Promise<Fixture[]> {
+  const res = await fetch(SCHEDULE_URL)
+  if (!res.ok) throw new Error(`Schedule fetch failed: HTTP ${res.status}`)
+  const data = (await res.json()) as OpenFootballFile
+  return parseSchedule(data)
 }
 
 const STATE_MAP: Record<string, MatchStatus> = {
