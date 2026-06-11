@@ -10,6 +10,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // Proxy ESPN through the dev server so the browser stays same-origin (no CORS).
+    proxy: {
+      '/espn': {
+        target: 'https://site.api.espn.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/espn/, ''),
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

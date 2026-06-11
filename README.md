@@ -27,9 +27,11 @@ Results are fetched in the background but **stay hidden until you choose to reve
 | Data | Source | Notes |
 | --- | --- | --- |
 | Schedule, groups, venues, kickoff offsets | [openfootball/worldcup.json](https://github.com/openfootball/worldcup.json) | Public domain, served via GitHub CDN |
-| Live scores & match status | ESPN public scoreboard (`site.api.espn.com`) | Keyless, CORS-open; fetched in the browser |
+| Live scores & match status | ESPN public scoreboard (`site.api.espn.com`) | Keyless; proxied same-origin to avoid CORS |
 
-Kickoff times in openfootball carry explicit UTC offsets (e.g. `13:00 UTC-6`), so conversion to Europe/Zagreb is deterministic via the native `Intl` API — no date library needed. ESPN scores are matched to fixtures by US-Eastern date + team name (with an alias map for naming differences), and the schedule renders fully even if ESPN is unreachable.
+ESPN is reached through a same-origin `/espn/*` path — proxied by the Vite dev server in development and by a `vercel.json` rewrite in production — so the browser never makes a cross-origin request. Scores are only fetched for matches that have already kicked off, and matched to fixtures by US-Eastern date + team name (with an alias map for naming differences). The schedule renders fully even if ESPN is unreachable.
+
+Kickoff times in openfootball carry explicit UTC offsets (e.g. `13:00 UTC-6`), so conversion to Europe/Zagreb is deterministic via the native `Intl` API — no date library needed.
 
 ## Develop
 
