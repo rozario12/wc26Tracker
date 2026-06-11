@@ -4,15 +4,20 @@
 // the background; this store decides what the user is allowed to see, defaulting
 // to spoiler-free. State is mirrored to localStorage so going back to an earlier
 // day stays consistent across reloads.
+//
+// Reveal is tracked by a single set of match ids (the source of truth). The
+// per-day "Show results" toggle is a thin wrapper that reveals/hides every match
+// id in that day, so turning a day off hides the whole day — including matches
+// that were revealed individually.
 
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { canonicalTeam } from '@/lib/teams'
+import { useSpoilerGate } from '@/composables/useSpoilerGate'
 
-const KEY = 'wc26.settings.v1'
+const KEY = 'wc26.settings.v2' // v2: single revealedMatches set (dropped revealedDays)
 
 interface PersistShape {
-  revealedDays: string[]
   revealedMatches: string[]
   revealStandings: boolean
   revealBracket: boolean
@@ -28,7 +33,6 @@ function load(): PersistShape {
     /* ignore corrupt storage */
   }
   return {
-    revealedDays: [],
     revealedMatches: [],
     revealStandings: false,
     revealBracket: false,
@@ -40,7 +44,6 @@ function load(): PersistShape {
 export const useSettings = defineStore('settings', () => {
   const initial = load()
 
-  const revealedDays = ref(new Set(initial.revealedDays))
   const revealedMatches = ref(new Set(initial.revealedMatches))
   const revealStandings = ref(initial.revealStandings)
   const revealBracket = ref(initial.revealBracket)
@@ -49,10 +52,9 @@ export const useSettings = defineStore('settings', () => {
 
   // Persist on any change.
   watch(
-    [revealedDays, revealedMatches, revealStandings, revealBracket, favourites, favouritesOnly],
+    [revealedMatches, revealStandings, revealBracket, favourites, favouritesOnly],
     () => {
       const data: PersistShape = {
-        revealedDays: [...revealedDays.value],
         revealedMatches: [...revealedMatches.value],
         revealStandings: revealStandings.value,
         revealBracket: revealBracket.value,
@@ -68,18 +70,9 @@ export const useSettings = defineStore('settings', () => {
     { deep: true },
   )
 
-  // --- Reveal: a match is shown if its day is revealed OR it was revealed singly.
-  const isDayRevealed = (day: string) => revealedDays.value.has(day)
-  const isMatchRevealed = (id: string, day: string) =>
-    revealedDays.value.has(day) || revealedMatches.value.has(id)
-
-  function toggleDay(day: string, on?: boolean) {
-    const next = new Set(revealedDays.value)
-    const reveal = on ?? !next.has(day)
-    if (reveal) next.add(day)
-    else next.delete(day)
-    revealedDays.value = next
-  }
+  // --- Reveal (single source of truth: revealedMatches) ---
+  const isMatchRevealed = (id: string) => revealedMatches.value.has(id)
+  const anyRevealed = (ids: string[]) => ids.some((id) => revealedMatches.value.has(id))
 
   function toggleMatch(id: string, on?: boolean) {
     const next = new Set(revealedMatches.value)
@@ -89,11 +82,23 @@ export const useSettings = defineStore('settings', () => {
     revealedMatches.value = next
   }
 
+  function revealMatches(ids: string[]) {
+    const next = new Set(revealedMatches.value)
+    for (const id of ids) next.add(id)
+    revealedMatches.value = next
+  }
+
+  function hideMatches(ids: string[]) {
+    const next = new Set(revealedMatches.value)
+    for (const id of ids) next.delete(id)
+    revealedMatches.value = next
+  }
+
   function hideAll() {
-    revealedDays.value = new Set()
     revealedMatches.value = new Set()
     revealStandings.value = false
     revealBracket.value = false
+    useSpoilerGate().reset() // re-arm the Results/Statistics spoiler gate
   }
 
   // --- Favourites
@@ -109,16 +114,16 @@ export const useSettings = defineStore('settings', () => {
   const favouriteCount = computed(() => favourites.value.size)
 
   return {
-    revealedDays,
     revealedMatches,
     revealStandings,
     revealBracket,
     favourites,
     favouritesOnly,
-    isDayRevealed,
     isMatchRevealed,
-    toggleDay,
+    anyRevealed,
     toggleMatch,
+    revealMatches,
+    hideMatches,
     hideAll,
     isFavourite,
     toggleFavourite,

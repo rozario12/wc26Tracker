@@ -5,11 +5,15 @@ import { zagrebTime } from '@/lib/time'
 import { useSettings } from '@/stores/settings'
 import TeamBadge from './TeamBadge.vue'
 
-const props = defineProps<{ fixture: Fixture }>()
+const props = defineProps<{
+  fixture: Fixture
+  /** Force the score to show directly with no reveal/hide controls (Results page). */
+  revealOverride?: boolean
+}>()
 const settings = useSettings()
 
-const revealed = computed(() =>
-  settings.isMatchRevealed(props.fixture.id, props.fixture.zagrebDay),
+const revealed = computed(
+  () => props.revealOverride || settings.isMatchRevealed(props.fixture.id),
 )
 
 const kickoff = computed(() => zagrebTime(props.fixture.kickoff))
@@ -34,17 +38,18 @@ const isFavMatch = computed(
     <div class="teams">
       <TeamBadge class="t1" :team="fixture.team1" favouritable />
       <div class="middle">
-        <template v-if="revealed && hasScore">
+        <template v-if="hasScore && revealed">
           <span class="score">{{ result!.score1 }}–{{ result!.score2 }}</span>
           <span v-if="result!.detail" class="detail">{{ result!.detail }}</span>
         </template>
-        <template v-else-if="revealed">
-          <span class="vs">vs</span>
+        <!-- Only played matches get a reveal button — no dead click for fixtures with no score. -->
+        <template v-else-if="hasScore">
+          <button class="reveal" title="Reveal this score" @click="settings.toggleMatch(fixture.id, true)">
+            👁 Reveal
+          </button>
         </template>
         <template v-else>
-          <button class="reveal" title="Reveal this score" @click="settings.toggleMatch(fixture.id)">
-            👁 {{ hasScore ? 'Reveal' : 'vs' }}
-          </button>
+          <span class="vs">vs</span>
         </template>
       </div>
       <TeamBadge class="t2" :team="fixture.team2" favouritable align="right" />
@@ -55,7 +60,7 @@ const isFavMatch = computed(
       <span v-else class="chip knockout">{{ fixture.round }}</span>
       <span class="ground">📍 {{ fixture.ground }}</span>
       <button
-        v-if="revealed && hasScore"
+        v-if="revealed && hasScore && !revealOverride"
         class="hide-one"
         title="Hide this score again"
         @click="settings.toggleMatch(fixture.id, false)"
@@ -180,5 +185,27 @@ const isFavMatch = computed(
 }
 .hide-one:hover {
   color: var(--danger);
+}
+
+/* Mobile only: long team names were forcing the card ~120px wide. Let the team
+   columns shrink below their longest word and ellipsise the name. Desktop (>=768px)
+   keeps the original layout untouched. */
+@media (max-width: 767px) {
+  .teams {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0.4rem;
+  }
+  .middle {
+    min-width: 4.2rem;
+  }
+  .t1,
+  .t2 {
+    min-width: 0;
+  }
+  .t1 :deep(.name),
+  .t2 :deep(.name) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 </style>
