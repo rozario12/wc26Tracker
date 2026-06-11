@@ -27,7 +27,7 @@ defineProps<{ name: string; rows: GroupStandingRow[] }>()
       <tbody>
         <tr v-for="(r, i) in rows" :key="r.team" :class="{ qualify: i < 2 }">
           <td class="pos">{{ i + 1 }}</td>
-          <td class="team"><TeamBadge :team="r.team" favouritable /></td>
+          <td class="team"><TeamBadge :team="r.team" favouritable compact /></td>
           <td>{{ r.played }}</td>
           <td>{{ r.won }}</td>
           <td>{{ r.drawn }}</td>
@@ -74,14 +74,6 @@ td {
   text-align: center;
   padding: 0.4rem 0.18rem;
   border-top: 1px solid var(--border);
-}
-th.team,
-td.team {
-  max-width: 9.5rem;
-}
-td.team :deep(.name) {
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 th.team,
 td.team {

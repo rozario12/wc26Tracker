@@ -8,6 +8,8 @@ const props = defineProps<{
   /** Show a star toggle to favourite the team. */
   favouritable?: boolean
   align?: 'left' | 'right'
+  /** Truncate the name (~7 chars) with a hover tooltip — used in dense tables. */
+  compact?: boolean
 }>()
 
 const settings = useSettings()
@@ -17,7 +19,7 @@ const fav = computed(() => !placeholder.value && settings.isFavourite(props.team
 </script>
 
 <template>
-  <span class="team" :class="[align ?? 'left', { placeholder, fav }]">
+  <span class="team" :class="[align ?? 'left', { placeholder, fav, compact }]">
     <button
       v-if="favouritable && !placeholder"
       class="star"
@@ -28,7 +30,7 @@ const fav = computed(() => !placeholder.value && settings.isFavourite(props.team
       {{ fav ? '★' : '☆' }}
     </button>
     <span class="flag">{{ flag }}</span>
-    <span class="name">{{ team }}</span>
+    <span class="name" :title="team">{{ team }}</span>
   </span>
 </template>
 
@@ -56,6 +58,13 @@ const fav = computed(() => !placeholder.value && settings.isFavourite(props.team
 }
 .name {
   white-space: nowrap;
+}
+/* Dense tables: cap the name (~7 chars) and ellipsise; full name shows via title tooltip. */
+.team.compact .name {
+  max-width: 7ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
 }
 .star {
   background: none;
