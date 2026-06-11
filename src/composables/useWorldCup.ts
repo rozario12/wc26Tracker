@@ -9,7 +9,7 @@ import { fetchSchedule, fetchResults } from '@/lib/data'
 import { zagrebDayLabel } from '@/lib/time'
 import { computeStandings } from '@/lib/standings'
 
-const SCHEDULE_CACHE = 'wc26.schedule.v1'
+const SCHEDULE_CACHE = 'wc26.schedule.v2' // v2: unique fixture ids (v1 cached colliding ids)
 const SCHEDULE_TTL_MS = 24 * 60 * 60 * 1000 // refresh schedule daily
 
 const fixtures = ref<Fixture[]>([])
