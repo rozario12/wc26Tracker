@@ -9,8 +9,10 @@ const settings = useSettings()
 
 const tabs = [
   { to: '/', label: 'Schedule', icon: '📅' },
+  { to: '/results', label: 'Results', icon: '✅' },
   { to: '/standings', label: 'Standings', icon: '📊' },
   { to: '/bracket', label: 'Bracket', icon: '🏆' },
+  { to: '/statistics', label: 'Stats', icon: '📈' },
   { to: '/favourites', label: 'Favourites', icon: '⭐' },
 ]
 

@@ -7,7 +7,16 @@
 // any CORS restriction. If ESPN is unreachable the schedule still renders fully;
 // only live scores degrade.
 
-import type { Fixture, MatchResult, MatchStatus, OpenFootballFile } from './types'
+import type {
+  Fixture,
+  MatchResult,
+  MatchStatus,
+  MatchStatData,
+  GoalEvent,
+  CardEvent,
+  TeamStatLine,
+  OpenFootballFile,
+} from './types'
 import { parseKickoff, zagrebDayKey, espnDateForInstant } from './time'
 import { canonicalTeam, isPlaceholder } from './teams'
 
@@ -140,6 +149,102 @@ export async function fetchResults(fixtures: Fixture[]): Promise<Map<string, Mat
     })
   }
   return results
+}
+
+// --- Statistics data --------------------------------------------------------
+
+function num(stats: any[], name: string): number {
+  const s = stats?.find?.((x) => x.name === name)
+  const v = s ? Number(s.displayValue) : NaN
+  return Number.isFinite(v) ? v : 0
+}
+
+/** Parse one finished ESPN competition into MatchStatData (goals, cards, team stats). */
+function parseStatMatch(ev: any): MatchStatData | null {
+  const comp = ev.competitions?.[0]
+  const competitors = comp?.competitors ?? []
+  const home = competitors.find((c: any) => c.homeAway === 'home') ?? competitors[0]
+  const away = competitors.find((c: any) => c.homeAway === 'away') ?? competitors[1]
+  if (!home || !away) return null
+
+  const nameById = new Map<string, string>()
+  for (const c of competitors) {
+    nameById.set(String(c.team?.id), c.team?.displayName ?? c.team?.name ?? '')
+  }
+  const teamName = (id: unknown) => nameById.get(String(id)) ?? ''
+
+  const goals: GoalEvent[] = []
+  const cards: CardEvent[] = []
+  for (const d of comp.details ?? []) {
+    const player = d.athletesInvolved?.[0]?.displayName ?? 'Unknown'
+    const team = teamName(d.team?.id)
+    if (d.scoringPlay) {
+      goals.push({
+        player,
+        team,
+        penalty: !!d.penaltyKick || /penalty/i.test(d.type?.text ?? ''),
+        ownGoal: !!d.ownGoal,
+      })
+    }
+    if (d.yellowCard || d.redCard) {
+      cards.push({ player, team, color: d.redCard ? 'red' : 'yellow' })
+    }
+  }
+
+  const lineFor = (c: any): TeamStatLine => {
+    const poss = num(c.statistics, 'possessionPct')
+    return {
+      team: c.team?.displayName ?? c.team?.name ?? '',
+      possession: c.statistics?.some?.((s: any) => s.name === 'possessionPct') ? poss : null,
+      shots: num(c.statistics, 'totalShots'),
+      shotsOnTarget: num(c.statistics, 'shotsOnTarget'),
+      corners: num(c.statistics, 'wonCorners'),
+      fouls: num(c.statistics, 'foulsCommitted'),
+    }
+  }
+
+  return {
+    team1: home.team?.displayName ?? '',
+    team2: away.team?.displayName ?? '',
+    score1: Number(home.score) || 0,
+    score2: Number(away.score) || 0,
+    goals,
+    cards,
+    teamStats: [lineFor(home), lineFor(away)],
+  }
+}
+
+/**
+ * Fetch per-match statistics for every finished match. Reuses the same scoreboard
+ * dates as the results path; called lazily by the Statistics page.
+ */
+export async function fetchStatData(fixtures: Fixture[]): Promise<MatchStatData[]> {
+  const now = Date.now()
+  const dates = [
+    ...new Set(
+      fixtures
+        .filter((f) => f.resolved && f.kickoff.getTime() <= now)
+        .map((f) => espnDateForInstant(f.kickoff)),
+    ),
+  ]
+  const out: MatchStatData[] = []
+  await Promise.all(
+    dates.map(async (d) => {
+      try {
+        const res = await fetch(espnUrl(d))
+        if (!res.ok) return
+        const json = await res.json()
+        for (const ev of json.events ?? []) {
+          if (ev.status?.type?.state !== 'post') continue // finished matches only
+          const parsed = parseStatMatch(ev)
+          if (parsed) out.push(parsed)
+        }
+      } catch {
+        /* degrade gracefully */
+      }
+    }),
+  )
+  return out
 }
 
 export { SCHEDULE_URL }

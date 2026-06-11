@@ -66,3 +66,78 @@ export interface GroupStandingRow {
   goalDiff: number
   points: number
 }
+
+// --- Statistics (derived from the ESPN scoreboard `details`/`statistics`) ---
+
+export interface GoalEvent {
+  player: string
+  team: string
+  penalty: boolean
+  ownGoal: boolean
+}
+
+export interface CardEvent {
+  player: string
+  team: string
+  color: 'yellow' | 'red'
+}
+
+export interface TeamStatLine {
+  team: string
+  possession: number | null
+  shots: number
+  shotsOnTarget: number
+  corners: number
+  fouls: number
+}
+
+/** Parsed stats for a single finished/played match. */
+export interface MatchStatData {
+  team1: string
+  team2: string
+  score1: number
+  score2: number
+  goals: GoalEvent[]
+  cards: CardEvent[]
+  teamStats: TeamStatLine[]
+}
+
+export interface ScorerRow {
+  player: string
+  team: string
+  goals: number
+  penalties: number
+}
+
+export interface CardRow {
+  player: string
+  team: string
+  yellow: number
+  red: number
+}
+
+export interface TeamStatRow {
+  team: string
+  matches: number
+  shots: number
+  shotsOnTarget: number
+  corners: number
+  fouls: number
+  /** Average possession % across the team's matches, or null if unknown. */
+  possession: number | null
+}
+
+export interface TournamentTotals {
+  matchesPlayed: number
+  totalGoals: number
+  avgGoals: number
+  redCards: number
+  biggestWin: { team1: string; team2: string; score1: number; score2: number } | null
+}
+
+export interface TournamentStats {
+  scorers: ScorerRow[]
+  cards: CardRow[]
+  teamStats: TeamStatRow[]
+  totals: TournamentTotals
+}

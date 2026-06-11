@@ -7,11 +7,23 @@ import MatchCard from './MatchCard.vue'
 const props = defineProps<{ day: MatchDay; today?: string }>()
 const settings = useSettings()
 
-const revealed = computed(() => settings.isDayRevealed(props.day.day))
-const isToday = computed(() => props.today === props.day.day)
-const anyFinished = computed(() =>
-  props.day.fixtures.some((f) => f.result && f.result.status !== 'upcoming'),
+// Ids of matches that actually have a score (only those are worth revealing).
+const scoredIds = computed(() =>
+  props.day.fixtures
+    .filter((f) => f.result && f.result.score1 != null && f.result.score2 != null)
+    .map((f) => f.id),
 )
+const allIds = computed(() => props.day.fixtures.map((f) => f.id))
+
+// The day switch is a master control over its matches.
+const revealed = computed(() => settings.anyRevealed(scoredIds.value))
+const hasResults = computed(() => scoredIds.value.length > 0)
+const isToday = computed(() => props.today === props.day.day)
+
+function onToggle(on: boolean) {
+  if (on) settings.revealMatches(scoredIds.value)
+  else settings.hideMatches(allIds.value)
+}
 </script>
 
 <template>
@@ -23,12 +35,16 @@ const anyFinished = computed(() =>
         <span class="count">{{ day.fixtures.length }} {{ day.fixtures.length === 1 ? 'match' : 'matches' }}</span>
       </div>
 
-      <label class="reveal-toggle" :title="anyFinished ? 'Reveal all scores for this day' : 'No results yet'">
+      <label
+        v-if="hasResults"
+        class="reveal-toggle"
+        title="Show or hide every score for this day"
+      >
         <input
           type="checkbox"
           class="sr-only"
           :checked="revealed"
-          @change="settings.toggleDay(day.day, ($event.target as HTMLInputElement).checked)"
+          @change="onToggle(($event.target as HTMLInputElement).checked)"
         />
         <span class="switch" :class="{ on: revealed }" aria-hidden="true"></span>
         <span class="reveal-text">{{ revealed ? 'Results shown' : 'Show results' }}</span>
