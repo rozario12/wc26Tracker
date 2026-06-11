@@ -61,7 +61,7 @@ const fav = computed(() => !placeholder.value && settings.isFavourite(props.team
 }
 /* Dense tables: cap the name (~7 chars) and ellipsise; full name shows via title tooltip. */
 .team.compact .name {
-  max-width: 7ch;
+  max-width: 25ch;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: help;

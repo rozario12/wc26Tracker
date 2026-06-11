@@ -79,6 +79,10 @@ th.team,
 td.team {
   text-align: left;
 }
+td.team {
+  max-width: 200px;
+  width: 200px;
+}
 .pos {
   color: var(--text-dim);
   width: 1.4rem;
