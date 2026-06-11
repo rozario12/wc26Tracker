@@ -1,0 +1,72 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { teamFlag, isPlaceholder } from '@/lib/teams'
+import { useSettings } from '@/stores/settings'
+
+const props = defineProps<{
+  team: string
+  /** Show a star toggle to favourite the team. */
+  favouritable?: boolean
+  align?: 'left' | 'right'
+}>()
+
+const settings = useSettings()
+const placeholder = computed(() => isPlaceholder(props.team))
+const flag = computed(() => teamFlag(props.team))
+const fav = computed(() => !placeholder.value && settings.isFavourite(props.team))
+</script>
+
+<template>
+  <span class="team" :class="[align ?? 'left', { placeholder, fav }]">
+    <button
+      v-if="favouritable && !placeholder"
+      class="star"
+      :class="{ on: fav }"
+      :title="fav ? 'Remove favourite' : 'Add favourite'"
+      @click.stop="settings.toggleFavourite(team)"
+    >
+      {{ fav ? '★' : '☆' }}
+    </button>
+    <span class="flag">{{ flag }}</span>
+    <span class="name">{{ team }}</span>
+  </span>
+</template>
+
+<style scoped>
+.team {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+.team.right {
+  flex-direction: row-reverse;
+}
+.team.placeholder .name {
+  color: var(--text-dim);
+  font-style: italic;
+  font-weight: 500;
+}
+.team.fav .name {
+  color: var(--fav);
+}
+.flag {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.name {
+  white-space: nowrap;
+}
+.star {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.1rem;
+  line-height: 1;
+}
+.star.on {
+  color: var(--fav);
+}
+</style>
