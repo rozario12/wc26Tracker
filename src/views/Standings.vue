@@ -103,7 +103,8 @@ const tables = computed(() => [...standingsFrom(groupStageFixtures.value).entrie
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* min() stops the 360px track from forcing horizontal overflow on phones. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
   gap: 0.85rem;
 }
 .masked .big {

@@ -8,6 +8,7 @@ defineProps<{ name: string; rows: GroupStandingRow[] }>()
 <template>
   <div class="group card">
     <h3>{{ name }}</h3>
+    <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -26,7 +27,7 @@ defineProps<{ name: string; rows: GroupStandingRow[] }>()
       <tbody>
         <tr v-for="(r, i) in rows" :key="r.team" :class="{ qualify: i < 2 }">
           <td class="pos">{{ i + 1 }}</td>
-          <td class="team"><TeamBadge :team="r.team" favouritable /></td>
+          <td class="team"><TeamBadge :team="r.team" favouritable compact /></td>
           <td>{{ r.played }}</td>
           <td>{{ r.won }}</td>
           <td>{{ r.drawn }}</td>
@@ -38,16 +39,23 @@ defineProps<{ name: string; rows: GroupStandingRow[] }>()
         </tr>
       </tbody>
     </table>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .group {
   padding: 0.85rem 0.9rem;
+  overflow: hidden; /* keep the card from leaking on narrow screens */
 }
 h3 {
   margin: 0 0 0.6rem;
   font-size: 1rem;
+}
+.table-wrap {
+  /* If the table is still too wide, scroll inside the card instead of overflowing the page. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 table {
   width: 100%;
@@ -59,12 +67,12 @@ th {
   color: var(--text-dim);
   font-weight: 600;
   text-align: center;
-  padding: 0.3rem 0.2rem;
+  padding: 0.3rem 0.18rem;
   font-size: 0.72rem;
 }
 td {
   text-align: center;
-  padding: 0.4rem 0.2rem;
+  padding: 0.4rem 0.18rem;
   border-top: 1px solid var(--border);
 }
 th.team,

@@ -1,8 +1,10 @@
 // Data access: openfootball schedule + ESPN live scores, merged into Fixtures.
 //
-// Both sources are keyless and reached directly from the browser. openfootball
-// is public-domain on GitHub's CDN; ESPN's scoreboard sends permissive CORS
-// headers. If ESPN ever blocks browser access the schedule still renders fully —
+// openfootball is public-domain on GitHub's CDN (CORS-safe, fetched directly).
+// ESPN's scoreboard is reached through a same-origin proxy ("/espn/...") so the
+// browser never makes a cross-origin request — the Vite dev server proxies it in
+// development and a vercel.json rewrite proxies it in production. This sidesteps
+// any CORS restriction. If ESPN is unreachable the schedule still renders fully;
 // only live scores degrade.
 
 import type { Fixture, MatchResult, MatchStatus, OpenFootballFile } from './types'
@@ -12,8 +14,9 @@ import { canonicalTeam, isPlaceholder } from './teams'
 const SCHEDULE_URL =
   'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json'
 
+// Same-origin path; rewritten to https://site.api.espn.com/... by the proxy.
 const espnUrl = (dateParam: string) =>
-  `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${dateParam}`
+  `/espn/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${dateParam}`
 
 /** Stable, source-independent key for a match: its date + unordered team pair. */
 function pairKey(dateParam: string, a: string, b: string): string {
@@ -99,10 +102,14 @@ async function fetchEspnDate(dateParam: string): Promise<Map<string, EspnScore>>
 
 /**
  * Fetch ESPN scores for the given fixtures and return results keyed by fixture id.
- * Only the distinct US-Eastern dates that the fixtures fall on are queried.
+ * Only matches that have already kicked off are queried (future days have no
+ * scores), and only their distinct US-Eastern dates are requested — so early in
+ * the tournament this is one or two calls, not one per match-day.
  */
 export async function fetchResults(fixtures: Fixture[]): Promise<Map<string, MatchResult>> {
-  const dates = [...new Set(fixtures.map((f) => espnDateForInstant(f.kickoff)))]
+  const now = Date.now()
+  const relevant = fixtures.filter((f) => f.resolved && f.kickoff.getTime() <= now)
+  const dates = [...new Set(relevant.map((f) => espnDateForInstant(f.kickoff)))]
   const perDate = await Promise.all(
     dates.map(async (d) => [d, await fetchEspnDate(d)] as const),
   )
@@ -110,8 +117,7 @@ export async function fetchResults(fixtures: Fixture[]): Promise<Map<string, Mat
   for (const [, m] of perDate) for (const [k, v] of m) index.set(k, v)
 
   const results = new Map<string, MatchResult>()
-  for (const f of fixtures) {
-    if (!f.resolved) continue
+  for (const f of relevant) {
     const key = pairKey(espnDateForInstant(f.kickoff), f.team1, f.team2)
     const e = index.get(key)
     if (!e) continue
