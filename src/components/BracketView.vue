@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import type { Fixture } from '@/lib/types'
 import { zagrebTime, zagrebDayLabel } from '@/lib/time'
-import { teamFlag, isPlaceholder } from '@/lib/teams'
+import { isPlaceholder } from '@/lib/teams'
+import Flag from './Flag.vue'
 
 const props = defineProps<{ fixtures: Fixture[]; revealed: boolean }>()
 
@@ -30,9 +31,9 @@ function show(team: string) {
   if (props.revealed || isPlaceholder(team)) return team
   return '•••'
 }
-function flagFor(team: string) {
-  if (props.revealed || isPlaceholder(team)) return teamFlag(team)
-  return '🏳️'
+// A *resolved* team's flag is a spoiler, so blank it (pass "") until revealed.
+function flagTeam(team: string) {
+  return props.revealed || isPlaceholder(team) ? team : ''
 }
 function hasScore(f: Fixture) {
   return f.result && f.result.score1 != null && f.result.score2 != null
@@ -49,12 +50,12 @@ function hasScore(f: Fixture) {
             {{ zagrebDayLabel(f.kickoff) }} · {{ zagrebTime(f.kickoff) }}
           </div>
           <div class="side">
-            <span class="flag">{{ flagFor(f.team1) }}</span>
+            <Flag class="flag" :team="flagTeam(f.team1)" />
             <span class="bteam" :class="{ ph: isPlaceholder(f.team1) || !revealed }">{{ show(f.team1) }}</span>
             <span v-if="revealed && hasScore(f)" class="bscore">{{ f.result!.score1 }}</span>
           </div>
           <div class="side">
-            <span class="flag">{{ flagFor(f.team2) }}</span>
+            <Flag class="flag" :team="flagTeam(f.team2)" />
             <span class="bteam" :class="{ ph: isPlaceholder(f.team2) || !revealed }">{{ show(f.team2) }}</span>
             <span v-if="revealed && hasScore(f)" class="bscore">{{ f.result!.score2 }}</span>
           </div>
