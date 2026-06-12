@@ -2,7 +2,7 @@
 import { watch, onMounted } from 'vue'
 import { useStats } from '@/composables/useStats'
 import { useSpoilerGate } from '@/composables/useSpoilerGate'
-import { teamFlag } from '@/lib/teams'
+import Flag from '@/components/Flag.vue'
 import SpoilerGate from '@/components/SpoilerGate.vue'
 
 const { stats, loading, error, load } = useStats()
@@ -41,9 +41,9 @@ watch(acknowledged, (ok) => {
           <div class="stat card"><span class="big">{{ stats.totals.redCards }}</span><span class="lbl">Red cards</span></div>
         </section>
         <p v-if="stats.totals.biggestWin" class="biggest">
-          Biggest win: {{ teamFlag(stats.totals.biggestWin.team1) }} {{ stats.totals.biggestWin.team1 }}
+          Biggest win: <Flag :team="stats.totals.biggestWin.team1" /> {{ stats.totals.biggestWin.team1 }}
           {{ stats.totals.biggestWin.score1 }}–{{ stats.totals.biggestWin.score2 }}
-          {{ stats.totals.biggestWin.team2 }} {{ teamFlag(stats.totals.biggestWin.team2) }}
+          {{ stats.totals.biggestWin.team2 }} <Flag :team="stats.totals.biggestWin.team2" />
         </p>
 
         <!-- Top scorers -->
@@ -53,7 +53,7 @@ watch(acknowledged, (ok) => {
             <tbody>
               <tr v-for="(s, i) in stats.scorers.slice(0, 15)" :key="s.player + s.team">
                 <td class="rank">{{ i + 1 }}</td>
-                <td class="who"><span class="flag">{{ teamFlag(s.team) }}</span> {{ s.player }}</td>
+                <td class="who"><Flag class="flag" :team="s.team" /> {{ s.player }}</td>
                 <td class="num">
                   {{ s.goals }}<span v-if="s.penalties" class="pen"> ({{ s.penalties }}P)</span>
                 </td>
@@ -71,7 +71,7 @@ watch(acknowledged, (ok) => {
             <tbody>
               <tr v-for="(c, i) in stats.cards.slice(0, 15)" :key="c.player + c.team">
                 <td class="rank">{{ i + 1 }}</td>
-                <td class="who"><span class="flag">{{ teamFlag(c.team) }}</span> {{ c.player }}</td>
+                <td class="who"><Flag class="flag" :team="c.team" /> {{ c.player }}</td>
                 <td class="num">{{ c.yellow }}</td>
                 <td class="num">{{ c.red }}</td>
               </tr>
@@ -90,7 +90,7 @@ watch(acknowledged, (ok) => {
               </thead>
               <tbody>
                 <tr v-for="t in stats.teamStats" :key="t.team">
-                  <td class="who"><span class="flag">{{ teamFlag(t.team) }}</span> {{ t.team }}</td>
+                  <td class="who"><Flag class="flag" :team="t.team" /> {{ t.team }}</td>
                   <td class="num">{{ t.matches }}</td>
                   <td class="num">{{ t.shots }}</td>
                   <td class="num">{{ t.shotsOnTarget }}</td>
