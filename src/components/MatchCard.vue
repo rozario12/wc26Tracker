@@ -52,7 +52,7 @@ const isFavMatch = computed(
           <span class="vs">vs</span>
         </template>
       </div>
-      <TeamBadge class="t2" :team="fixture.team2" favouritable align="right" />
+      <TeamBadge class="t2" :team="fixture.team2" favouritable />
     </div>
 
     <div class="meta">
