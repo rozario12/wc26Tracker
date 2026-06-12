@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { useWorldCup } from '@/composables/useWorldCup'
 import { useSettings } from '@/stores/settings'
-import { teamFlag, canonicalTeam } from '@/lib/teams'
+import { canonicalTeam } from '@/lib/teams'
+import Flag from '@/components/Flag.vue'
 
 const { groupStageFixtures, loading } = useWorldCup()
 const settings = useSettings()
@@ -53,7 +54,7 @@ const favTeams = computed(() =>
           class="pill on"
           @click="settings.toggleFavourite(t)"
         >
-          {{ teamFlag(t) }} {{ t }} ✕
+          <Flag :team="t" /> {{ t }} ✕
         </button>
       </div>
 
@@ -67,7 +68,7 @@ const favTeams = computed(() =>
             :class="{ on: settings.isFavourite(t) }"
             @click="settings.toggleFavourite(t)"
           >
-            <span class="flag">{{ teamFlag(t) }}</span>
+            <Flag class="flag" :team="t" />
             {{ t }}
             <span class="mark">{{ settings.isFavourite(t) ? '★' : '☆' }}</span>
           </button>

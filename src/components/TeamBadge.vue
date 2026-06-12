@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { teamFlag, isPlaceholder } from '@/lib/teams'
+import { isPlaceholder } from '@/lib/teams'
 import { useSettings } from '@/stores/settings'
+import Flag from './Flag.vue'
 
 const props = defineProps<{
   team: string
@@ -14,7 +15,6 @@ const props = defineProps<{
 
 const settings = useSettings()
 const placeholder = computed(() => isPlaceholder(props.team))
-const flag = computed(() => teamFlag(props.team))
 const fav = computed(() => !placeholder.value && settings.isFavourite(props.team))
 </script>
 
@@ -29,7 +29,7 @@ const fav = computed(() => !placeholder.value && settings.isFavourite(props.team
     >
       {{ fav ? '★' : '☆' }}
     </button>
-    <span class="flag">{{ flag }}</span>
+    <Flag :team="team" />
     <span class="name" :title="team">{{ team }}</span>
   </span>
 </template>
