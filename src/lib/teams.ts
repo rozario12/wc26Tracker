@@ -34,8 +34,11 @@ const ALIASES: Record<string, string> = {
   turkey: 'Turkey',
   // openfootball spells these with "&" / "DR"; map common variants (e.g. ESPN's)
   // to the same canonical key so flags resolve and live scores still merge.
+  // ESPN's scoreboard uses the hyphenated "Bosnia-Herzegovina" — without this
+  // alias its live scores never merged onto the fixture (keys didn't match).
   'bosnia and herzegovina': 'Bosnia & Herzegovina',
   'bosnia & herzegovina': 'Bosnia & Herzegovina',
+  'bosnia-herzegovina': 'Bosnia & Herzegovina',
   'congo dr': 'DR Congo',
   'dr congo': 'DR Congo',
   'democratic republic of the congo': 'DR Congo',
