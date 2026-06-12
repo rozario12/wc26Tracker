@@ -29,10 +29,10 @@ const isFavMatch = computed(
 </script>
 
 <template>
-  <div class="match" :class="{ live: isLive && revealed, favourite: isFavMatch }">
+  <div class="match" :class="{ live: isLive, favourite: isFavMatch }">
     <div class="kickoff">
       <span class="time">{{ kickoff }}</span>
-      <span v-if="isLive && revealed" class="live-dot">● LIVE</span>
+      <span v-if="isLive" class="live-badge"><span class="live-dot" aria-hidden="true"></span>LIVE</span>
     </div>
 
     <div class="teams">
@@ -98,14 +98,26 @@ const isFavMatch = computed(
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
-.live-dot {
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   color: var(--live);
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+.live-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--live);
   animation: pulse 1.4s ease-in-out infinite;
 }
 @keyframes pulse {
   50% {
-    opacity: 0.45;
+    opacity: 0.35;
   }
 }
 .teams {
