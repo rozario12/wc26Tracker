@@ -61,6 +61,8 @@ function onToggle(on: boolean) {
 .day {
   padding: 1rem;
   margin-bottom: 1rem;
+  /* Clear the sticky tab bar when scrolled to via "Jump to today". */
+  scroll-margin-top: 4.5rem;
 }
 .day-head {
   display: flex;
